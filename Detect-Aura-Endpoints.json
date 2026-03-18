@@ -1,0 +1,133 @@
+{
+  "description": "Detect Aura Endpoints",
+  "edition": 2,
+  "graph": {
+    "edges": [
+      {
+        "source": {
+          "exec_alias": "exec",
+          "node_id": 4
+        },
+        "target": {
+          "exec_alias": "exec",
+          "node_id": 1
+        }
+      },
+      {
+        "source": {
+          "exec_alias": "true",
+          "node_id": 7
+        },
+        "target": {
+          "exec_alias": "exec",
+          "node_id": 4
+        }
+      },
+      {
+        "source": {
+          "exec_alias": "exec",
+          "node_id": 8
+        },
+        "target": {
+          "exec_alias": "exec",
+          "node_id": 7
+        }
+      }
+    ],
+    "nodes": [
+      {
+        "alias": "passive_end",
+        "definition_id": "caido/passive-end",
+        "display": {
+          "x": 460,
+          "y": -30
+        },
+        "id": 1,
+        "name": "Passive End",
+        "version": "0.1.0"
+      },
+      {
+        "alias": "javascript",
+        "definition_id": "caido/http-code-js",
+        "display": {
+          "x": 40,
+          "y": -20
+        },
+        "id": 4,
+        "inputs": [
+          {
+            "alias": "request",
+            "value": {
+              "data": "$on_intercept_response.request",
+              "kind": "ref"
+            }
+          },
+          {
+            "alias": "response",
+            "value": {
+              "data": "$on_intercept_response.response",
+              "kind": "ref"
+            }
+          },
+          {
+            "alias": "code",
+            "value": {
+              "data": "/**\n * @param {HttpInput} input\n * @param {SDK} sdk\n * @returns {MaybePromise<Data | undefined>}\n */\nexport async function run({ request, response }, sdk) {\n  let url = new URL(request.getUrl());\n  await sdk.findings.create({\n      title: \"Salesforce Aura Endpoint Discovered\",\n      description: `Request to \\`/aura\\` endpoint contains a \\`message\\` parameter.\\n\\nCheck the Aura endpoint for data exposure as discussed in this Mandiant blog\\nhttps://cloud.google.com/blog/topics/threat-intelligence/auditing-salesforce-aura-data-exposure\\n\\nUse this Aura Inspector fork to exfiltrate data\\nhttps://github.com/ACK-J/aura-inspector\\n\\nExample Command: \\`python3 ./aura_cli.py -u \"https://example.com\" -k -o ./results --fetch-all\\``,\n      reporter: \"workflow\",\n      request: request,\n      dedupeKey: `aura-message-${url.hostname}-${url.pathname}`\n    });\n}",
+              "kind": "string"
+            }
+          }
+        ],
+        "name": "Javascript",
+        "version": "0.1.1"
+      },
+      {
+        "alias": "matches_httpql",
+        "definition_id": "caido/httpql-matches",
+        "display": {
+          "x": -220,
+          "y": -30
+        },
+        "id": 7,
+        "inputs": [
+          {
+            "alias": "response",
+            "value": {
+              "data": "$on_intercept_response.response",
+              "kind": "ref"
+            }
+          },
+          {
+            "alias": "request",
+            "value": {
+              "data": "$on_intercept_response.request",
+              "kind": "ref"
+            }
+          },
+          {
+            "alias": "query",
+            "value": {
+              "data": "(req.path.cont:\"/aura\" and req.query.cont:\"message=\" and req.method.eq:\"GET\") or (req.path.cont:\"/aura\" and req.method.eq:\"POST\" and req.raw.cont:\"message=\" )",
+              "kind": "string"
+            }
+          }
+        ],
+        "name": "Matches HTTPQL",
+        "version": "0.2.0"
+      },
+      {
+        "alias": "on_intercept_response",
+        "definition_id": "caido/on-intercept-response",
+        "display": {
+          "x": -510,
+          "y": -90
+        },
+        "id": 8,
+        "name": "On Intercept Response",
+        "version": "0.1.0"
+      }
+    ]
+  },
+  "id": "dd6f144c-45d4-40f4-acbe-16def1adcedc",
+  "kind": "passive",
+  "name": "Detect Aura Endpoints"
+}
